@@ -22,8 +22,13 @@ DSH 桌面端/Web 端左侧栏有多个项目（workspace），每个项目下�
 2. 点 **安装**，粘贴下面这行（这就是安装地址，不是命令）：
 
    ```
-   github:zach-bworld/dsh-session-notify
+   https://github.com/zach-bworld/dsh-session-notify
    ```
+
+   也接受这几种写法，效果一样：
+   - `github:zach-bworld/dsh-session-notify`
+   - `git@github.com:zach-bworld/dsh-session-notify.git`
+   - 本地目录绝对路径（先 clone 下来）
 
 3. 安装完成后在列表里**启用**它
 4. **刷新页面**（Ctrl+R）或重开窗口
