@@ -16,20 +16,58 @@ DSH 桌面端/Web 端左侧栏有多个项目（workspace），每个项目下�
 
 ## 安装
 
-要求：DSH 0.2.x（桌面端或 Web 端 profile 均可）。
+### 桌面端 App（推荐，普通用户用这个）
+
+1. 打开左侧栏最下方的 **插件**
+2. 点 **安装**，粘贴下面这行（这就是安装地址，不是命令）：
+
+   ```
+   github:zach-bworld/dsh-session-notify
+   ```
+
+3. 安装完成后在列表里**启用**它
+4. **刷新页面**（Ctrl+R）或重开窗口
+
+> 为什么不用命令行：桌面端的 profile 由 App 独占管理，在 PowerShell 里执行 `dsh plugin --profile desktop add …` 会报
+> `profile "desktop" is managed exclusively by the Electron application`。这是设计如此，不是你的问题。
+
+### 命令行 / Web 端
 
 ```bash
-# 方式一：从 GitHub 安装（推荐）
-dsh plugin --profile <你的profile名> add github:zach-bworld/dsh-session-notify
-
-# 方式二：本地目录（先 clone 下来）
-git clone https://github.com/zach-bworld/dsh-session-notify
-dsh plugin --profile <你的profile名> add ./dsh-session-notify
+dsh plugin --profile web add github:zach-bworld/dsh-session-notify
 ```
 
-安装后**刷新页面或重开窗口**（客户端 bundle 需要重新加载）。Host 侧无需重启。
+`web` 换成你自己的 profile 名即可（常见：`web`、`tui`、`headless`）。
+装完刷新页面。
 
-Agent 用户也可以用 `plugin_manager` 工具安装：`action: install_bundle`，`target` 传该目录绝对路径。
+### 装指定版本
+
+```bash
+dsh plugin --profile web add github:zach-bworld/dsh-session-notify#v1.0.0
+```
+
+### 卸载
+
+在 App 的插件页移除；或命令行：
+
+```bash
+dsh plugin --profile web remove @…/dsh-session-notify
+```
+
+### 装不上怎么办
+
+| 现象 | 原因 / 处理 |
+| --- | --- |
+| 命令行报 `managed exclusively` | 桌面端请走 App 内的插件页 |
+| 装完没反应 | 客户端 bundle 需要刷新页面才加载 |
+| 提示找不到包 | 检查拼写：`github:zach-bworld/dsh-session-notify`（冒号、斜杠都是必需的） |
+
+## 首次使用怎么看效果
+
+1. 在项目 A 里发一个要跑一会儿的任务
+2. 立刻切到项目 B
+3. 等 A 跑完 → **侧边栏底部出现角标数字 + 一条系统通知**
+4. 点角标 → 选会话 → 直接跳过去；点进会话即自动清除
 
 ## 工作原理
 
