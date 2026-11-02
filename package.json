@@ -1,0 +1,52 @@
+{
+  "name": "@local/dsh-session-notify",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "DSH client plugin: sidebar badge + system notification when a session finishes while you are working in another project.",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-session",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ]
+    }
+  },
+  "license": "MIT",
+  "author": "zach-bworld",
+  "homepage": "https://github.com/zach-bworld/dsh-session-notify#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zach-bworld/dsh-session-notify.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zach-bworld/dsh-session-notify/issues"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "dsh-plugin",
+    "notification",
+    "sidebar",
+    "session"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Session Finish Notifier",
+    "description": "Shows a badge in the sidebar footer when a session finishes while you are working in another project, and raises a system notification."
+  }
+}
