@@ -10,7 +10,7 @@ DSH 桌面端/Web 端左侧栏有多个项目（workspace），每个项目下�
 
 ## 效果预览
 
-![preview](docs/preview.png)
+![preview](docs/preview-v1.png)
 
 > 示意图：实际外观随主题与字号变化。真实效果为**侧边栏底部角标（按项目分组）+ 系统通知**，点角标可跳转到对应会话。
 

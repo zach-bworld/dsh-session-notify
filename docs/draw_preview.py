@@ -97,7 +97,7 @@ d.text((lx + 18, ly + lh - 44), "点进会话即自动清除该条未读", font=
 d.text((rx, 420), "示意图 — 实际外观随主题/字号变化", font=f_small, fill=MUTED)
 d.text((rx, 444), "真实效果：刷新页面后，后台会话跑完即出现角标 + 系统通知", font=f_tiny, fill=MUTED)
 
-out = "D:/work/dsh-plugins/dsh-session-notify/docs/preview.png"
+out = "D:/work/dsh-plugins/dsh-session-notify/docs/preview-v1.png"
 import os
 os.makedirs(os.path.dirname(out), exist_ok=True)
 img.save(out, "PNG", optimize=True)
