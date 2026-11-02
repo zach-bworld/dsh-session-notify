@@ -10,10 +10,11 @@ DSH 桌面端/Web 端左侧栏有多个项目（workspace），每个项目下�
 
 ## 效果预览
 
-![badge and popup](docs/preview-real.png)
+| 侧边栏底部角标（项目收起时也可见） | 点开后按项目分组的完成列表 |
+| --- | --- |
+| ![sidebar badge](docs/screenshot-sidebar.png) | ![finished list](docs/screenshot-popup.png) |
 
-真实截图（项目名与会话名已替换为占位文字）：侧边栏底部的角标显示未读数，点开后按项目分组列出已完成的会话。
-
+左图：即使当前项目被收起，侧边栏底部仍显示未读完成数。右图：点开后按项目分组列出已完成的会话，点任意一条即可跳转，进入会话后自动清除。
 ## 安装
 
 ### 桌面端 App（推荐，普通用户用这个）
