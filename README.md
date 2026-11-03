@@ -15,6 +15,8 @@ DSH 桌面端/Web 端左侧栏有多个项目（workspace），每个项目下�
 | ![sidebar badge](docs/screenshot-sidebar.png) | ![finished list](docs/screenshot-popup.png) |
 
 左图：即使当前项目被收起，侧边栏底部仍显示未读完成数。右图：点开后按项目分组列出已完成的会话，点任意一条即可跳转，进入会话后自动清除。
+> 只统计**你自己发起的会话**：子 agent（subagent）的内部会话不计入，避免任务一多就被内部会话刷屏。
+
 ## 安装
 
 ### 桌面端 App（推荐，普通用户用这个）

@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-session-notify",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "description": "DSH client plugin: sidebar badge + system notification when a session finishes while you are working in another project.",

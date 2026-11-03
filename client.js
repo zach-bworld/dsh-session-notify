@@ -129,6 +129,22 @@ window.__ModuleLoader__.load({
         return service === undefined ? { ids: [], byId: {} } : service.list.getSnapshot();
       };
 
+      /**
+       * A subagent session is a child of another session. `byId` also carries
+       * retained subagent fallbacks, so both the lineage field and the coarse
+       * origin label are checked; only host-catalog `ids` count as real sessions.
+       */
+      const isSubagentRow = (row) =>
+        row !== undefined && (row.parentId !== undefined || row.origin === 'subagent');
+
+      /** Whether a session belongs in the badge: inside the catalog and not a subagent. */
+      const isTrackable = (list, sessionId, row) => {
+        if (row === undefined || isSubagentRow(row)) return false;
+        const ids = list.ids;
+        if (!Array.isArray(ids)) return true;
+        return ids.includes(sessionId);
+      };
+
       const isMainView = (sessionId) => {
         const row = listSnapshot().byId?.[sessionId];
         return (row?.retainedBy?.mainView ?? 0) > 0;
@@ -151,6 +167,10 @@ window.__ModuleLoader__.load({
         for (const [sessionId, at] of [...unread]) {
           const row = list.byId?.[sessionId];
           if (row === undefined) {
+            unread.delete(sessionId);
+            continue;
+          }
+          if (!isTrackable(list, sessionId, row)) {
             unread.delete(sessionId);
             continue;
           }
@@ -214,6 +234,8 @@ window.__ModuleLoader__.load({
 
       const observe = (sessionId, isRunning) => {
         if (typeof sessionId !== 'string') return;
+        const list = listSnapshot();
+        if (!isTrackable(list, sessionId, list.byId?.[sessionId])) return;
         const previous = running.get(sessionId);
         running.set(sessionId, isRunning);
         if (isRunning) {
@@ -236,6 +258,11 @@ window.__ModuleLoader__.load({
         for (const sessionId of present) {
           const row = list.byId?.[sessionId];
           if (row === undefined) continue;
+          if (!isTrackable(list, sessionId, row)) {
+            running.delete(sessionId);
+            unread.delete(sessionId);
+            continue;
+          }
           const isRunning = row.running === true;
           if (!running.has(sessionId)) running.set(sessionId, isRunning);
           else if (running.get(sessionId) !== isRunning) {
