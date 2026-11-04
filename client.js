@@ -12,6 +12,7 @@ window.__ModuleLoader__.load({
       'badge.label': '已完成的会话',
       'badge.count': '{n} 个会话已完成',
       'badge.todo': '{n} 个待办会话',
+      'badge.both': '{done} 个已完成 · {todo} 个待办',
       'group.ungrouped': '未分组',
       'notify.title': '会话已完成',
       'notify.body': '{project} · {title}',
@@ -30,6 +31,7 @@ window.__ModuleLoader__.load({
       'badge.label': 'Finished sessions',
       'badge.count': '{n} finished',
       'badge.todo': '{n} todo',
+      'badge.both': '{done} finished · {todo} todo',
       'group.ungrouped': 'Ungrouped',
       'notify.title': 'Session finished',
       'notify.body': '{project} · {title}',
@@ -62,6 +64,8 @@ window.__ModuleLoader__.load({
       '.dsn-button:hover,.dsn-button[aria-expanded="true"]{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.14));color:var(--dsw-alias-label-primary,#111)}',
       '.dsn-button:focus-visible{outline:2px solid var(--dsw-alias-label-accent,#247bbf);outline-offset:1px}',
       '.dsn-icon{display:block;flex:none}',
+      '.dsn-todos{display:inline-flex;align-items:center;gap:2px;height:18px;padding:0 5px 0 4px;border-radius:9px;background:rgba(59,108,240,.12);color:var(--dsw-alias-label-accent,#247bbf);font-size:11px;line-height:1;font-variant-numeric:tabular-nums}',
+      '.dsn-dot-pin{position:absolute;bottom:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--dsw-alias-label-accent,#247bbf)}',
       '.dsn-count{font-variant-numeric:tabular-nums;font-weight:600;color:var(--dsw-alias-label-primary,#111)}',
       '.dsn-dot{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--dsw-alias-label-danger,#d93a3a)}',
       '.dsn-popover{position:absolute;left:0;bottom:calc(100% + 8px);z-index:60;min-width:210px;max-width:300px;max-height:320px;overflow:auto;padding:6px;border-radius:var(--dsw-radius-md,10px);background:var(--dsw-alias-bg-overlay,var(--dsw-specific-sidebar-fill,#fff));border:1px solid var(--dsw-alias-border-l2,rgba(127,127,127,.22));box-shadow:0 10px 28px rgba(0,0,0,.18);color:var(--dsw-alias-label-primary,#111);font-size:12px}',
@@ -516,6 +520,25 @@ window.__ModuleLoader__.load({
     }
 
     /** Defensive outer component: a missing injected hook must not blank the slot. */
+    /** Original pin glyph marking todo counts; artwork may use its own color. */
+    function PinIcon() {
+      return h(
+        'svg',
+        {
+          className: 'dsn-icon',
+          viewBox: '0 0 16 16',
+          width: 12,
+          height: 12,
+          'aria-hidden': 'true',
+          focusable: 'false',
+        },
+        h('path', {
+          fill: 'currentColor',
+          d: 'M8 1.2a4.3 4.3 0 0 1 4.3 4.3c0 2.2-1.7 3.5-2.9 4.6-.5.45-.8.8-.8 1.4v2.5a.6.6 0 0 1-1.2 0v-2.5c0-.6-.3-.95-.8-1.4C5.4 9 3.7 7.7 3.7 5.5A4.3 4.3 0 0 1 8 1.2Z',
+        }),
+      );
+    }
+
     function NotifyBadge(props) {
       if (typeof props.useSessionNotify !== 'function') return null;
       return h(NotifyBadgeView, props);
@@ -592,9 +615,14 @@ window.__ModuleLoader__.load({
       if (total === 0 && todos.length === 0) return null;
 
       const groups = state.groups ?? [];
+      const todoCount = todos.length;
       const pendingOnly = total === 0;
-      const shown = pendingOnly ? todos.length : total;
-      const label = pendingOnly ? t('badge.todo', { n: shown }) : t('badge.count', { n: shown });
+      const label =
+        total > 0 && todoCount > 0
+          ? t('badge.both', { done: total, todo: todoCount })
+          : pendingOnly
+            ? t('badge.todo', { n: todoCount })
+            : t('badge.count', { n: total });
       const todoIds = new Set(todos.map((item) => item.id));
 
       /** Close the popover, open the Session, then reveal its sidebar row. */
@@ -614,7 +642,7 @@ window.__ModuleLoader__.load({
           {
             key: 'toggle',
             type: 'button',
-            className: pendingOnly ? 'dsn-button dsn-button-todo' : 'dsn-button',
+            className: todoCount > 0 ? 'dsn-button dsn-button-todo' : 'dsn-button',
             'aria-label': label,
             'aria-haspopup': 'dialog',
             'aria-expanded': open ? 'true' : 'false',
@@ -622,14 +650,23 @@ window.__ModuleLoader__.load({
             onClick: () => setOpen((value) => !value),
           },
           h(BellIcon, { key: 'icon' }),
-          wide ? h('span', { key: 'count', className: 'dsn-count' }, String(shown)) : null,
-          wide
-            ? null
-            : h('span', {
-                key: 'dot',
-                className: pendingOnly ? 'dsn-dot dsn-dot-todo' : 'dsn-dot',
-                'aria-hidden': 'true',
-              }),
+          wide && total > 0
+            ? h('span', { key: 'count', className: 'dsn-count' }, String(total))
+            : null,
+          wide && todoCount > 0
+            ? h(
+                'span',
+                { key: 'todos', className: 'dsn-todos', title: t('badge.todo', { n: todoCount }) },
+                h(PinIcon, { key: 'pin' }),
+                String(todoCount),
+              )
+            : null,
+          !wide && total > 0
+            ? h('span', { key: 'dot', className: 'dsn-dot', 'aria-hidden': 'true' })
+            : null,
+          !wide && todoCount > 0
+            ? h('span', { key: 'dot-pin', className: 'dsn-dot-pin', 'aria-hidden': 'true' })
+            : null,
         ),
       ];
 
