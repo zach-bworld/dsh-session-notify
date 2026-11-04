@@ -11,9 +11,17 @@ window.__ModuleLoader__.load({
     const zh = {
       'badge.label': '已完成的会话',
       'badge.count': '{n} 个会话已完成',
+      'badge.todo': '{n} 个待办会话',
       'group.ungrouped': '未分组',
       'notify.title': '会话已完成',
       'notify.body': '{project} · {title}',
+      'summary': '待办 {todo} · 已完成 {done}',
+      'tabs.todo': '待办',
+      'tabs.done': '已完成',
+      'todo.add': '标记待办',
+      'todo.remove': '取消待办',
+      'todo.aria': '{action}：{title}',
+      'todo.empty': '还没有待办。点右侧 ☆ 可以长期跟进某条会话。',
       'untitled': '未命名会话',
     };
 
@@ -21,13 +29,32 @@ window.__ModuleLoader__.load({
     const en = {
       'badge.label': 'Finished sessions',
       'badge.count': '{n} finished',
+      'badge.todo': '{n} todo',
       'group.ungrouped': 'Ungrouped',
       'notify.title': 'Session finished',
       'notify.body': '{project} · {title}',
+      'summary': 'Todos {todo} · Done {done}',
+      'tabs.todo': 'Todos',
+      'tabs.done': 'Done',
+      'todo.add': 'Mark as todo',
+      'todo.remove': 'Remove todo',
+      'todo.aria': '{action}: {title}',
+      'todo.empty': 'No todos yet. Click ☆ on a row to keep following it.',
       'untitled': 'Untitled session',
     };
 
     const STYLE_ID = '@local/dsh-session-notify/badge';
+
+    /** localStorage key holding the todo map: sessionId -> { at, title, project }. */
+    const TODO_KEY = 'dsh-session-notify.todos.v1';
+
+    /** How many frames to wait for the sidebar row that openSession() renders. */
+    const REVEAL_ATTEMPTS = 3;
+    const REVEAL_INTERVAL = 150;
+    const REVEAL_FLASH_MS = 1600;
+
+    /** Temporary class applied to the revealed sidebar row. */
+    const REVEAL_CLASS = 'dsn-reveal';
 
     const CSS = [
       '.dsn-root{position:relative;display:inline-flex;align-items:center}',
@@ -44,6 +71,19 @@ window.__ModuleLoader__.load({
       '.dsn-item{display:block;width:100%;padding:6px 8px;border:none;border-radius:var(--dsw-radius-sm,6px);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}',
       '.dsn-item:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.14))}',
       '.dsn-item-title{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.dsn-row{display:flex;align-items:center;gap:2px}',
+      '.dsn-row .dsn-item{flex:1 1 auto;width:auto;min-width:0}',
+      '.dsn-item-sub{display:block;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--dsw-alias-label-secondary,#6b7280)}',
+      '.dsn-pin{flex:none;width:22px;height:22px;padding:0;border:none;border-radius:var(--dsw-radius-sm,6px);background:transparent;color:var(--dsw-alias-label-secondary,#6b7280);font:inherit;font-size:12px;line-height:1;cursor:pointer}',
+      '.dsn-pin:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.14));color:var(--dsw-alias-label-primary,#111)}',
+      '.dsn-pin:focus-visible{outline:2px solid var(--dsw-alias-label-accent,#247bbf);outline-offset:1px}',
+      '.dsn-pin[aria-pressed="true"]{color:var(--dsw-alias-label-accent,#247bbf)}',
+      '.dsn-section{padding:8px 8px 2px;font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--dsw-alias-label-secondary,#6b7280)}',
+      '.dsn-empty{padding:2px 8px 6px;font-size:11px;color:var(--dsw-alias-label-secondary,#6b7280);opacity:.85}',
+      '.dsn-button-todo{box-shadow:inset 0 0 0 1px rgba(59,108,240,.45);color:var(--dsw-alias-label-accent,#247bbf)}',
+      '.dsn-button-todo:hover,.dsn-button-todo[aria-expanded="true"]{background:rgba(59,108,240,.12);color:var(--dsw-alias-label-accent,#247bbf)}',
+      '.dsn-dot-todo{background:var(--dsw-alias-label-accent,#247bbf)}',
+      '.dsn-reveal{outline:2px solid rgba(59,108,240,.55);outline-offset:-2px;border-radius:8px;transition:outline-color .3s}',
     ].join('\n');
 
     /** Original bell glyph; artwork may use its own color. */
@@ -80,6 +120,74 @@ window.__ModuleLoader__.load({
     }
 
     /**
+     * Read the persisted todo map: sessionId -> { at, title, project }.
+     *
+     * A blocked, missing, or corrupted store yields an empty map. Todos are a
+     * convenience, never a reason for the badge to fail.
+     */
+    function readTodos() {
+      try {
+        if (typeof localStorage === 'undefined') return new Map();
+        const raw = localStorage.getItem(TODO_KEY);
+        if (raw === null || raw === '') return new Map();
+        const parsed = JSON.parse(raw);
+        if (parsed === null || typeof parsed !== 'object') return new Map();
+        const map = new Map();
+        for (const [sessionId, entry] of Object.entries(parsed)) {
+          if (entry === null || typeof entry !== 'object') continue;
+          map.set(sessionId, {
+            at: typeof entry.at === 'number' ? entry.at : Date.now(),
+            title: typeof entry.title === 'string' ? entry.title : '',
+            project: typeof entry.project === 'string' ? entry.project : '',
+          });
+        }
+        return map;
+      } catch (error) {
+        console.warn('[session-notify] todo store unreadable:', error);
+        return new Map();
+      }
+    }
+
+    /** Persist the todo map; a full quota or blocked storage is logged and ignored. */
+    function writeTodos(map) {
+      try {
+        if (typeof localStorage === 'undefined') return;
+        localStorage.setItem(TODO_KEY, JSON.stringify(Object.fromEntries(map)));
+      } catch (error) {
+        console.warn('[session-notify] todo store unwritable:', error);
+      }
+    }
+
+    /** Find a sidebar row by its data-row-key; a malformed selector yields null. */
+    function findRow(key) {
+      if (typeof document === 'undefined') return null;
+      try {
+        return document.querySelector('[data-row-key="' + key + '"]');
+      } catch (error) {
+        return null;
+      }
+    }
+
+    /** Scroll a sidebar row into view and flash it, then drop the marker again. */
+    function flashRow(element) {
+      if (element === null || element === undefined) return;
+      try {
+        element.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        element.classList.add(REVEAL_CLASS);
+      } catch (error) {
+        console.warn('[session-notify] reveal failed:', error);
+        return;
+      }
+      window.setTimeout(() => {
+        try {
+          element.classList.remove(REVEAL_CLASS);
+        } catch (error) {
+          /* the sidebar may have re-rendered the row away */
+        }
+      }, REVEAL_FLASH_MS);
+    }
+
+    /**
      * Track Sessions that finished while they were not the main view.
      *
      * Run state arrives two ways: a `running` flip on the Session list snapshot
@@ -91,8 +199,9 @@ window.__ModuleLoader__.load({
     function createTracker(ctx) {
       const running = new Map();
       const unread = new Map();
+      const todos = readTodos();
       const listeners = new Set();
-      let snapshot = { total: 0, groups: [] };
+      let snapshot = { total: 0, groups: [], todos: [] };
       let signature = '';
 
       const t = () => ctx.locale.bind(NS);
@@ -122,6 +231,49 @@ window.__ModuleLoader__.load({
       const labelOf = (row) => {
         if (row === undefined) return t()('untitled');
         return row.displayTitle || row.title || t()('untitled');
+      };
+
+      /** Project title used as a todo subtitle; ungrouped when nothing owns it. */
+      const projectLabelOf = (sessionId, index) => {
+        const workspace = (index ?? workspaceIndex()).get(sessionId);
+        if (workspace === undefined) return t()('group.ungrouped');
+        return workspace.title || workspace.path || '';
+      };
+
+      /**
+       * Reveal the sidebar row of a Session after opening it.
+       *
+       * `openSession` is asynchronous, so the row is probed once per frame for a
+       * few frames. A manually collapsed project never renders its Session rows,
+       * so its project row is revealed instead; a Session outside every project
+       * is skipped silently, and nothing ever throws at the caller.
+       */
+      const revealSession = (sessionId) => {
+        if (typeof sessionId !== 'string' || typeof window === 'undefined') return;
+
+        const fallback = () => {
+          const workspace = workspaceIndex().get(sessionId);
+          if (workspace === undefined) return;
+          flashRow(findRow('workspace:' + workspace.workspaceId));
+        };
+
+        let attempt = 0;
+        const probe = () => {
+          attempt += 1;
+          const row = findRow('session:' + sessionId);
+          if (row !== null) {
+            flashRow(row);
+            return;
+          }
+          if (attempt >= REVEAL_ATTEMPTS) {
+            fallback();
+            return;
+          }
+          window.setTimeout(probe, REVEAL_INTERVAL);
+        };
+
+        if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(probe);
+        else probe();
       };
 
       const listSnapshot = () => {
@@ -158,6 +310,57 @@ window.__ModuleLoader__.load({
             console.warn('[session-notify] listener failed:', error);
           }
         }
+      };
+
+      /**
+       * Snapshot of the todos, newest first.
+       *
+       * A Session that vanished from a ready catalog is dropped for good; while
+       * the catalog is still loading the stored title and project are used, so a
+       * page reload cannot wipe the list before the Sessions arrive.
+       */
+      const rebuildTodos = (list, index) => {
+        const ready = list.phase === 'ready';
+        let dropped = false;
+        const items = [];
+        for (const [sessionId, entry] of [...todos]) {
+          const row = list.byId?.[sessionId];
+          if (row === undefined && ready) {
+            todos.delete(sessionId);
+            dropped = true;
+            continue;
+          }
+          items.push({
+            id: sessionId,
+            at: entry.at,
+            title: row === undefined ? entry.title || t()('untitled') : labelOf(row),
+            project: projectLabelOf(sessionId, index) || entry.project,
+          });
+        }
+        if (dropped) writeTodos(todos);
+        return items.sort((left, right) => right.at - left.at);
+      };
+
+      /**
+       * Toggle the todo mark of a Session and persist it.
+       *
+       * Called from the popover pin; the rebuilt snapshot re-renders the row and
+       * the badge, so the component keeps no todo state of its own.
+       */
+      const toggleTodo = (sessionId) => {
+        if (typeof sessionId !== 'string') return;
+        if (todos.delete(sessionId)) {
+          writeTodos(todos);
+          rebuild();
+          return;
+        }
+        todos.set(sessionId, {
+          at: Date.now(),
+          title: labelOf(listSnapshot().byId?.[sessionId]),
+          project: projectLabelOf(sessionId),
+        });
+        writeTodos(todos);
+        rebuild();
       };
 
       const rebuild = () => {
@@ -197,10 +400,16 @@ window.__ModuleLoader__.load({
             items: group.items.slice().sort((left, right) => right.at - left.at),
           }))
           .sort((left, right) => right.items[0].at - left.items[0].at);
-        const next = { total: ordered.reduce((sum, group) => sum + group.items.length, 0), groups: ordered };
-        const nextSignature = JSON.stringify(
+        const todoItems = rebuildTodos(list, index);
+        const next = {
+          total: ordered.reduce((sum, group) => sum + group.items.length, 0),
+          groups: ordered,
+          todos: todoItems,
+        };
+        const nextSignature = JSON.stringify([
           ordered.map((group) => [group.key, group.title, group.items.map((item) => item.id)]),
-        );
+          todoItems.map((item) => [item.id, item.at, item.title, item.project]),
+        ]);
         if (nextSignature === signature) return;
         signature = nextSignature;
         snapshot = next;
@@ -301,6 +510,8 @@ window.__ModuleLoader__.load({
           rebuild();
         },
         openSession,
+        revealSession,
+        toggleTodo,
       };
     }
 
@@ -310,8 +521,51 @@ window.__ModuleLoader__.load({
       return h(NotifyBadgeView, props);
     }
 
-    /** Footer control: completion count plus a per-project list of finished Sessions. */
-    function NotifyBadgeView({ wide, t, openSession, useSessionNotify }) {
+    /**
+     * One popover row: opens the Session, plus a pin that toggles its todo mark.
+     * The pin stops propagation so marking a row never opens it.
+     */
+    function NotifyRow({ item, subtitle, pinned, t, onOpen, onToggle }) {
+      const pinLabel = pinned ? t('todo.remove') : t('todo.add');
+      return h(
+        'div',
+        { className: 'dsn-row' },
+        h(
+          'button',
+          {
+            type: 'button',
+            className: 'dsn-item',
+            title: item.title,
+            onClick: () => onOpen(item.id),
+          },
+          h('span', { className: 'dsn-item-title' }, item.title),
+          subtitle === undefined || subtitle === '' ? null : h('span', { className: 'dsn-item-sub' }, subtitle),
+        ),
+        h(
+          'button',
+          {
+            type: 'button',
+            className: 'dsn-pin',
+            'aria-label': t('todo.aria', { action: pinLabel, title: item.title }),
+            'aria-pressed': pinned ? 'true' : 'false',
+            title: pinLabel,
+            onClick: (event) => {
+              event.stopPropagation();
+              onToggle(item.id);
+            },
+          },
+          pinned ? '★' : '☆',
+        ),
+      );
+    }
+
+    /**
+     * Footer control: todos plus the per-project list of finished Sessions.
+     *
+     * The badge counts unread completions; with none left it shows the todo count
+     * and an outlined look, so "new completion" and "just a todo" stay distinct.
+     */
+    function NotifyBadgeView({ wide, t, openSession, revealSession, toggleTodo, useSessionNotify }) {
       const snapshot = useSessionNotify((state) => state);
       const [open, setOpen] = React.useState(false);
       const root = React.useRef(null);
@@ -332,11 +586,27 @@ window.__ModuleLoader__.load({
         };
       }, [open]);
 
-      const total = snapshot === undefined || snapshot === null ? 0 : snapshot.total;
-      if (total === 0) return null;
+      const state = snapshot === undefined || snapshot === null ? {} : snapshot;
+      const total = state.total ?? 0;
+      const todos = state.todos ?? [];
+      if (total === 0 && todos.length === 0) return null;
 
-      const groups = snapshot.groups ?? [];
-      const label = t('badge.count', { n: total });
+      const groups = state.groups ?? [];
+      const pendingOnly = total === 0;
+      const shown = pendingOnly ? todos.length : total;
+      const label = pendingOnly ? t('badge.todo', { n: shown }) : t('badge.count', { n: shown });
+      const todoIds = new Set(todos.map((item) => item.id));
+
+      /** Close the popover, open the Session, then reveal its sidebar row. */
+      const openAt = (sessionId) => {
+        setOpen(false);
+        openSession(sessionId);
+        if (typeof revealSession === 'function') revealSession(sessionId);
+      };
+
+      const toggleAt = (sessionId) => {
+        if (typeof toggleTodo === 'function') toggleTodo(sessionId);
+      };
 
       const children = [
         h(
@@ -344,7 +614,7 @@ window.__ModuleLoader__.load({
           {
             key: 'toggle',
             type: 'button',
-            className: 'dsn-button',
+            className: pendingOnly ? 'dsn-button dsn-button-todo' : 'dsn-button',
             'aria-label': label,
             'aria-haspopup': 'dialog',
             'aria-expanded': open ? 'true' : 'false',
@@ -352,12 +622,57 @@ window.__ModuleLoader__.load({
             onClick: () => setOpen((value) => !value),
           },
           h(BellIcon, { key: 'icon' }),
-          wide ? h('span', { key: 'count', className: 'dsn-count' }, String(total)) : null,
-          wide ? null : h('span', { key: 'dot', className: 'dsn-dot', 'aria-hidden': 'true' }),
+          wide ? h('span', { key: 'count', className: 'dsn-count' }, String(shown)) : null,
+          wide
+            ? null
+            : h('span', {
+                key: 'dot',
+                className: pendingOnly ? 'dsn-dot dsn-dot-todo' : 'dsn-dot',
+                'aria-hidden': 'true',
+              }),
         ),
       ];
 
       if (open) {
+        const rows = [
+          h('div', { key: 'head', className: 'dsn-head' }, t('summary', { todo: todos.length, done: total })),
+          h('div', { key: 'tabs.todo', className: 'dsn-section' }, t('tabs.todo')),
+        ];
+        if (todos.length === 0) {
+          rows.push(h('div', { key: 'todo.empty', className: 'dsn-empty' }, t('todo.empty')));
+        }
+        for (const item of todos) {
+          rows.push(
+            h(NotifyRow, {
+              key: 'todo:' + item.id,
+              item,
+              subtitle: item.project,
+              pinned: true,
+              t,
+              onOpen: openAt,
+              onToggle: toggleAt,
+            }),
+          );
+        }
+        if (total > 0) {
+          rows.push(h('div', { key: 'tabs.done', className: 'dsn-section' }, t('tabs.done')));
+          for (const group of groups) {
+            rows.push(h('div', { key: 'group:' + group.key, className: 'dsn-group' }, group.title));
+            for (const item of group.items) {
+              rows.push(
+                h(NotifyRow, {
+                  key: 'done:' + item.id,
+                  item,
+                  pinned: todoIds.has(item.id),
+                  t,
+                  onOpen: openAt,
+                  onToggle: toggleAt,
+                }),
+              );
+            }
+          }
+        }
+
         children.push(
           h(
             'div',
@@ -367,28 +682,7 @@ window.__ModuleLoader__.load({
               role: 'dialog',
               'aria-label': t('badge.label'),
             },
-            [
-              h('div', { key: 'head', className: 'dsn-head' }, label),
-              ...groups.flatMap((group) => [
-                h('div', { key: 'group:' + group.key, className: 'dsn-group' }, group.title),
-                ...group.items.map((item) =>
-                  h(
-                    'button',
-                    {
-                      key: 'item:' + item.id,
-                      type: 'button',
-                      className: 'dsn-item',
-                      title: item.title,
-                      onClick: () => {
-                        setOpen(false);
-                        openSession(item.id);
-                      },
-                    },
-                    h('span', { className: 'dsn-item-title' }, item.title),
-                  ),
-                ),
-              ]),
-            ],
+            rows,
           ),
         );
       }
@@ -433,6 +727,8 @@ window.__ModuleLoader__.load({
               inject: () => ({
                 hooks: { sessionNotify: tracker.store },
                 openSession: tracker.openSession,
+                revealSession: tracker.revealSession,
+                toggleTodo: tracker.toggleTodo,
               }),
             },
             NotifyBadge,
