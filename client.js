@@ -11,18 +11,22 @@ window.__ModuleLoader__.load({
     const zh = {
       'badge.label': '已完成的会话',
       'badge.count': '{n} 个会话已完成',
-      'badge.todo': '{n} 个待办会话',
-      'badge.both': '{done} 个已完成 · {todo} 个待办',
+      'badge.todo': '{n} 个收藏会话',
+      'badge.running': '{n} 个会话进行中',
+      'badge.waiting': '{n} 个会话等你回复',
+      'badge.both': '{done} 个已完成 · {todo} 个收藏',
+      'badge.idle': '提醒与收藏',
       'group.ungrouped': '未分组',
       'notify.title': '会话已完成',
       'notify.body': '{project} · {title}',
-      'summary': '待办 {todo} · 已完成 {done}',
-      'tabs.todo': '待办',
+      'summary': '已完成 {done} · 进行中 {run} · 收藏 {todo}',
+      'tabs.running': '进行中',
+      'tabs.todo': '收藏',
       'tabs.done': '已完成',
-      'todo.add': '标记待办',
-      'todo.remove': '取消待办',
+      'todo.add': '收藏此会话',
+      'todo.remove': '取消收藏',
       'todo.aria': '{action}：{title}',
-      'todo.empty': '还没有待办。点右侧 ☆ 可以长期跟进某条会话。',
+      'todo.empty': '还没有收藏。在会话行的 … 菜单里点「收藏此会话」即可加入。',
       'untitled': '未命名会话',
     };
 
@@ -30,18 +34,22 @@ window.__ModuleLoader__.load({
     const en = {
       'badge.label': 'Finished sessions',
       'badge.count': '{n} finished',
-      'badge.todo': '{n} todo',
-      'badge.both': '{done} finished · {todo} todo',
+      'badge.todo': '{n} starred',
+      'badge.running': '{n} running',
+      'badge.waiting': '{n} awaiting your reply',
+      'badge.both': '{done} finished · {todo} starred',
+      'badge.idle': 'Alerts and starred',
       'group.ungrouped': 'Ungrouped',
       'notify.title': 'Session finished',
       'notify.body': '{project} · {title}',
-      'summary': 'Todos {todo} · Done {done}',
-      'tabs.todo': 'Todos',
+      'summary': 'Done {done} · Running {run} · Starred {todo}',
+      'tabs.running': 'Running',
+      'tabs.todo': 'Starred',
       'tabs.done': 'Done',
-      'todo.add': 'Mark as todo',
-      'todo.remove': 'Remove todo',
+      'todo.add': 'Star this session',
+      'todo.remove': 'Remove from starred',
       'todo.aria': '{action}: {title}',
-      'todo.empty': 'No todos yet. Click ☆ on a row to keep following it.',
+      'todo.empty': 'Nothing starred yet. Open the … menu on a session row and pick "Star this session".',
       'untitled': 'Untitled session',
     };
 
@@ -64,9 +72,29 @@ window.__ModuleLoader__.load({
       '.dsn-button:hover,.dsn-button[aria-expanded="true"]{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.14));color:var(--dsw-alias-label-primary,#111)}',
       '.dsn-button:focus-visible{outline:2px solid var(--dsw-alias-label-accent,#247bbf);outline-offset:1px}',
       '.dsn-icon{display:block;flex:none}',
-      '.dsn-todos{display:inline-flex;align-items:center;gap:2px;height:18px;padding:0 5px 0 4px;border-radius:9px;background:rgba(59,108,240,.12);color:var(--dsw-alias-label-accent,#247bbf);font-size:11px;line-height:1;font-variant-numeric:tabular-nums}',
-      '.dsn-dot-pin{position:absolute;bottom:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--dsw-alias-label-accent,#247bbf)}',
-      '.dsn-count{font-variant-numeric:tabular-nums;font-weight:600;color:var(--dsw-alias-label-primary,#111)}',
+      '.dsn-todos{display:inline-flex;align-items:center;gap:2px;height:18px;padding:0 4px;color:var(--dsw-alias-label-secondary,#6b7280);font-size:11px;line-height:1;font-variant-numeric:tabular-nums}',
+      '.dsn-unread{display:inline-flex;align-items:center;color:var(--dsw-alias-label-danger,#d93a3a);font-size:12px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}',
+      '.dsn-todos-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:none;line-height:1}',
+      '.dsn-run{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 3px;color:var(--dsw-alias-label-tertiary,#9aa0a6);font-size:11px;line-height:1;font-variant-numeric:tabular-nums}',
+      '.dsn-run-wait{color:var(--dsw-alias-state-warn-primary,#f0a626)}',
+      '.dsn-run .dsn-sd{display:block;width:14px;height:14px}',
+      '.dsn-dot-run{position:absolute;top:3px;left:3px;width:6px;height:6px;border-radius:50%;background:var(--dsw-alias-label-tertiary,#9aa0a6)}',
+      '.dsn-run-spin{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;margin-right:6px;flex:none;color:var(--dsw-alias-label-tertiary,#9aa0a6)}',
+      '.dsn-run-spin .dsn-sd{display:block;width:14px;height:14px}',
+      '.dsn-wait-dot{position:relative;display:inline-block;width:10px;height:10px;margin-right:6px;flex:none;color:var(--dsw-alias-state-warn-primary,#f0a626)}',
+      '.dsn-wait-dot::after{content:"";position:absolute;inset:20%;border-radius:50%;background:currentColor}',
+      '.dsn-sd-motion{transform-origin:center;animation:dsn-sd-spin 1.5s linear infinite}',
+      '.dsn-sd-track,.dsn-sd-arc{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}',
+      '.dsn-sd-track{opacity:.25}',
+      '.dsn-sd-arc{stroke-dasharray:12 150;animation:dsn-sd-dash 1.5s ease-in-out infinite}',
+      '@keyframes dsn-sd-spin{to{transform:rotate(360deg)}}',
+      '@keyframes dsn-sd-dash{0%{stroke-dasharray:12 150;stroke-dashoffset:0}50%{stroke-dasharray:24 150;stroke-dashoffset:-6}100%{stroke-dasharray:12 150;stroke-dashoffset:0}}',
+      '.dsn-menu-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;flex:none;line-height:1}',
+      '.dsn-todos-icon .dsn-icon{display:block;width:16px;height:16px}',
+      '.dsn-menu-icon .dsn-icon{display:block;width:14px;height:14px}',
+      '.dsn-dot-pin{position:absolute;bottom:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--dsw-alias-label-secondary,#9aa0a6)}',
+      '.dsn-done-block{margin:2px 2px 6px;padding:2px 2px 4px;border-radius:8px;background:rgba(217,58,58,.07)}',
+      '.dsn-section-done{color:var(--dsw-alias-label-danger,#d93a3a)}',
       '.dsn-dot{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--dsw-alias-label-danger,#d93a3a)}',
       '.dsn-popover{position:absolute;left:0;bottom:calc(100% + 8px);z-index:60;min-width:210px;max-width:300px;max-height:320px;overflow:auto;padding:6px;border-radius:var(--dsw-radius-md,10px);background:var(--dsw-alias-bg-overlay,var(--dsw-specific-sidebar-fill,#fff));border:1px solid var(--dsw-alias-border-l2,rgba(127,127,127,.22));box-shadow:0 10px 28px rgba(0,0,0,.18);color:var(--dsw-alias-label-primary,#111);font-size:12px}',
       '.dsn-popover-rail{left:calc(100% + 8px);bottom:0}',
@@ -78,16 +106,18 @@ window.__ModuleLoader__.load({
       '.dsn-row{display:flex;align-items:center;gap:2px}',
       '.dsn-row .dsn-item{flex:1 1 auto;width:auto;min-width:0}',
       '.dsn-item-sub{display:block;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--dsw-alias-label-secondary,#6b7280)}',
-      '.dsn-pin{flex:none;width:22px;height:22px;padding:0;border:none;border-radius:var(--dsw-radius-sm,6px);background:transparent;color:var(--dsw-alias-label-secondary,#6b7280);font:inherit;font-size:12px;line-height:1;cursor:pointer}',
+      '.dsn-pin{flex:none;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;border:none;border-radius:var(--dsw-radius-sm,6px);background:transparent;color:var(--dsw-alias-label-secondary,#6b7280);font:inherit;line-height:1;cursor:pointer}',
       '.dsn-pin:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.14));color:var(--dsw-alias-label-primary,#111)}',
       '.dsn-pin:focus-visible{outline:2px solid var(--dsw-alias-label-accent,#247bbf);outline-offset:1px}',
       '.dsn-pin[aria-pressed="true"]{color:var(--dsw-alias-label-accent,#247bbf)}',
       '.dsn-section{padding:8px 8px 2px;font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--dsw-alias-label-secondary,#6b7280)}',
       '.dsn-empty{padding:2px 8px 6px;font-size:11px;color:var(--dsw-alias-label-secondary,#6b7280);opacity:.85}',
-      '.dsn-button-todo{box-shadow:inset 0 0 0 1px rgba(59,108,240,.45);color:var(--dsw-alias-label-accent,#247bbf)}',
-      '.dsn-button-todo:hover,.dsn-button-todo[aria-expanded="true"]{background:rgba(59,108,240,.12);color:var(--dsw-alias-label-accent,#247bbf)}',
-      '.dsn-dot-todo{background:var(--dsw-alias-label-accent,#247bbf)}',
+      '.dsn-button-idle{color:var(--dsw-alias-label-secondary,#6b7280)}',
+      '.dsn-label{font-weight:500;color:inherit}',
       '.dsn-reveal{outline:2px solid rgba(59,108,240,.55);outline-offset:-2px;border-radius:8px;transition:outline-color .3s}',
+      '.dsn-menu-item{display:flex;align-items:center;gap:6px;width:100%;padding:6px 10px 6px 8px;border:none;border-radius:var(--dsw-radius-sm,6px);background:transparent;color:inherit;font:inherit;font-size:13px;line-height:1.2;text-align:left;cursor:pointer}',
+      '.dsn-menu-item:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.14))}',
+      '.dsn-menu-item:focus-visible{outline:2px solid var(--dsw-alias-label-accent,#247bbf);outline-offset:1px}',
     ].join('\n');
 
     /** Original bell glyph; artwork may use its own color. */
@@ -106,6 +136,109 @@ window.__ModuleLoader__.load({
           fill: 'currentColor',
           d: 'M8 1.4a1 1 0 0 1 1 1v.42a4.15 4.15 0 0 1 3.15 4.03v2.03l.98 1.6a.78.78 0 0 1-.66 1.18H3.53a.78.78 0 0 1-.66-1.18l.98-1.6V6.85A4.15 4.15 0 0 1 7 2.82v-.42a1 1 0 0 1 1-1Zm0 13.2a2.16 2.16 0 0 1-2.08-1.58h4.16A2.16 2.16 0 0 1 8 14.6Z',
         }),
+      );
+    }
+
+    /**
+     * The star is drawn with the app's regular 1px line-icon weight and round joins,
+     * in a 16-unit box so the glyph sits next to the built-in pin/rename/archive icons
+     * without looking heavier. Switch the variant constant to try another shape.
+     */
+    const TODO_ICON_VARIANT = 'star'; // 'star' | 'checklist' | 'bookmark'
+
+    const STAR_PATH = 'M8 1.2 9.5 5.5 14.1 5.6 10.5 8.4 11.8 12.8 8 10.2 4.2 12.8 5.5 8.4 1.9 5.6 6.5 5.5Z';
+    const BOOKMARK_PATH = 'M4.6 2.6h6.8a.8.8 0 0 1 .8.8v9.4l-4.2-2.8-4.2 2.8V3.4a.8.8 0 0 1 .8-.8Z';
+
+    /** Star glyph shared by the badge, the row menu, and the popover pin. */
+    function TaskIcon(props) {
+      const filled = props !== undefined && props.filled === true;
+      const size = props !== undefined && typeof props.size === 'number' ? props.size : 16;
+      const shape = (() => {
+        if (TODO_ICON_VARIANT === 'star') {
+          return filled
+            ? h('path', { key: 'star', fill: 'currentColor', d: STAR_PATH })
+            : h('path', {
+                key: 'star',
+                fill: 'none',
+                stroke: 'currentColor',
+                strokeWidth: 1,
+                strokeLinejoin: 'round',
+                d: STAR_PATH,
+              });
+        }
+        if (TODO_ICON_VARIANT === 'bookmark') {
+          return filled
+            ? h('path', { key: 'bookmark', fill: 'currentColor', d: BOOKMARK_PATH })
+            : h('path', {
+                key: 'bookmark',
+                fill: 'none',
+                stroke: 'currentColor',
+                strokeWidth: 1,
+                strokeLinejoin: 'round',
+                d: BOOKMARK_PATH,
+              });
+        }
+        return [
+          h('rect', {
+            key: 'box',
+            x: 2.4,
+            y: 2.4,
+            width: 11.2,
+            height: 11.2,
+            rx: 3.2,
+            fill: filled ? 'currentColor' : 'none',
+            fillOpacity: filled ? 0.14 : 0,
+            stroke: 'currentColor',
+            strokeWidth: 1,
+          }),
+          h('path', {
+            key: 'check',
+            fill: 'none',
+            stroke: 'currentColor',
+            strokeWidth: 1,
+            strokeLinecap: 'round',
+            strokeLinejoin: 'round',
+            d: 'M5.2 8.2 7.1 10.1 10.9 5.9',
+          }),
+        ];
+      })();
+      return h(
+        'svg',
+        {
+          className: 'dsn-icon',
+          viewBox: '0 0 16 16',
+          width: size,
+          height: size,
+          'aria-hidden': 'true',
+          focusable: 'false',
+        },
+        shape,
+      );
+    }
+
+    /**
+     * The app's own running spinner (StateDot "ongoing"): a quiet full track
+     * behind a rotating breathing arc, copied with renamed classes so the panel
+     * matches the sidebar's native running indicator.
+     */
+    function RunningDot(props) {
+      const size = props !== undefined && typeof props.size === 'number' ? props.size : 14;
+      return h(
+        'svg',
+        {
+          className: 'dsn-icon dsn-sd',
+          viewBox: '0 0 24 24',
+          width: size,
+          height: size,
+          'aria-hidden': 'true',
+          focusable: 'false',
+        },
+        h(
+          'g',
+          { className: 'dsn-sd-motion' },
+          h('circle', { className: 'dsn-sd-track', cx: 12, cy: 12, r: 9.5 }),
+          h('circle', { className: 'dsn-sd-arc', cx: 12, cy: 12, r: 9.5 }),
+        ),
       );
     }
 
@@ -200,12 +333,12 @@ window.__ModuleLoader__.load({
      * selecting the Session (main-view retention) clears the mark, which is why
      * opening a row needs no explicit acknowledgement here.
      */
-    function createTracker(ctx) {
+    function createTracker(ctx, statusRef) {
       const running = new Map();
       const unread = new Map();
       const todos = readTodos();
       const listeners = new Set();
-      let snapshot = { total: 0, groups: [], todos: [] };
+      let snapshot = { total: 0, groups: [], todos: [], running: [] };
       let signature = '';
 
       const t = () => ctx.locale.bind(NS);
@@ -346,6 +479,38 @@ window.__ModuleLoader__.load({
       };
 
       /**
+       * Active sessions: still running, or stopped while the Agent waits for the
+       * user's answer (the sidebar's yellow state). Waiting rows sort first.
+       */
+      const rebuildActive = (list, index) => {
+        const raw = statusRef !== undefined ? statusRef.current : undefined;
+        // The snapshot is a Map per the types; tolerate plain-object shapes too.
+        const statusMap = raw instanceof Map
+          ? raw
+          : (raw !== null && typeof raw === 'object'
+            ? new Map(Object.entries(raw))
+            : undefined);
+        const items = [];
+        for (const sessionId of list.ids ?? []) {
+          const row = list.byId?.[sessionId];
+          if (row === undefined || row.blank === true) continue;
+          if (!isTrackable(list, sessionId, row)) continue;
+          const status = statusMap !== undefined ? statusMap.get(sessionId) : undefined;
+          const waiting = status !== undefined && status.pendingInteraction !== undefined;
+          const isRunning = row.running === true;
+          if (!isRunning && !waiting) continue;
+          items.push({
+            id: sessionId,
+            title: labelOf(row),
+            project: projectLabelOf(sessionId, index) || '',
+            at: typeof row.updatedAt === 'number' ? row.updatedAt : 0,
+            waiting,
+          });
+        }
+        return items.sort((left, right) => (right.waiting === true ? 1 : 0) - (left.waiting === true ? 1 : 0) || right.at - left.at);
+      };
+
+      /**
        * Toggle the todo mark of a Session and persist it.
        *
        * Called from the popover pin; the rebuilt snapshot re-renders the row and
@@ -405,14 +570,17 @@ window.__ModuleLoader__.load({
           }))
           .sort((left, right) => right.items[0].at - left.items[0].at);
         const todoItems = rebuildTodos(list, index);
+        const activeItems = rebuildActive(list, index);
         const next = {
           total: ordered.reduce((sum, group) => sum + group.items.length, 0),
           groups: ordered,
           todos: todoItems,
+          running: activeItems,
         };
         const nextSignature = JSON.stringify([
           ordered.map((group) => [group.key, group.title, group.items.map((item) => item.id)]),
           todoItems.map((item) => [item.id, item.at, item.title, item.project]),
+          activeItems.map((item) => [item.id, item.title, item.project, item.waiting === true]),
         ]);
         if (nextSignature === signature) return;
         signature = nextSignature;
@@ -520,35 +688,56 @@ window.__ModuleLoader__.load({
     }
 
     /** Defensive outer component: a missing injected hook must not blank the slot. */
-    /** Original pin glyph marking todo counts; artwork may use its own color. */
-    function PinIcon() {
-      return h(
-        'svg',
-        {
-          className: 'dsn-icon',
-          viewBox: '0 0 16 16',
-          width: 12,
-          height: 12,
-          'aria-hidden': 'true',
-          focusable: 'false',
-        },
-        h('path', {
-          fill: 'currentColor',
-          d: 'M8 1.2a4.3 4.3 0 0 1 4.3 4.3c0 2.2-1.7 3.5-2.9 4.6-.5.45-.8.8-.8 1.4v2.5a.6.6 0 0 1-1.2 0v-2.5c0-.6-.3-.95-.8-1.4C5.4 9 3.7 7.7 3.7 5.5A4.3 4.3 0 0 1 8 1.2Z',
-        }),
-      );
-    }
-
     function NotifyBadge(props) {
       if (typeof props.useSessionNotify !== 'function') return null;
       return h(NotifyBadgeView, props);
     }
 
     /**
+     * One row of the Session "..." menu: star or unstar that Session.
+     *
+     * The slot shares the menu's open-state hook, so the row closes the menu the
+     * same way the built-in pin/rename rows do before it toggles the mark.
+     */
+    function TodoMenuItem(props) {
+      const { sessionId, toggleTodo, useSessionNotify, useMenuOpenState, t } = props;
+      const state = typeof useSessionNotify === 'function' ? useSessionNotify((snapshot) => snapshot) : undefined;
+      const pinned = (state?.todos ?? []).some((item) => item.id === sessionId);
+      const menu = typeof useMenuOpenState === 'function' ? useMenuOpenState() : undefined;
+      const closeMenu = () => {
+        if (menu === undefined) return;
+        try {
+          menu[1](false);
+        } catch (error) {
+          /* the menu may already be unmounted */
+        }
+      };
+      const label = t(pinned ? 'todo.remove' : 'todo.add');
+      return h(
+        'button',
+        {
+          type: 'button',
+          role: 'menuitem',
+          className: 'dsn-menu-item',
+          'aria-label': label,
+          'aria-pressed': pinned ? 'true' : 'false',
+          title: label,
+          onClick: (event) => {
+            event.stopPropagation();
+            closeMenu();
+            if (typeof toggleTodo === 'function') toggleTodo(sessionId);
+          },
+        },
+        h('span', { className: 'dsn-menu-icon' }, h(TaskIcon, { filled: pinned, size: 14 })),
+        h('span', { className: 'dsn-menu-label' }, label),
+      );
+    }
+
+    /**
      * One popover row: opens the Session, plus a pin that toggles its todo mark.
      * The pin stops propagation so marking a row never opens it.
      */
-    function NotifyRow({ item, subtitle, pinned, t, onOpen, onToggle }) {
+    function NotifyRow({ item, subtitle, pinned, liveKind, t, onOpen, onToggle }) {
       const pinLabel = pinned ? t('todo.remove') : t('todo.add');
       return h(
         'div',
@@ -561,7 +750,15 @@ window.__ModuleLoader__.load({
             title: item.title,
             onClick: () => onOpen(item.id),
           },
-          h('span', { className: 'dsn-item-title' }, item.title),
+          h(
+            'span',
+            { className: 'dsn-item-title' },
+            liveKind === 'spin'
+              ? h('span', { className: 'dsn-run-spin' }, h(RunningDot, { size: 14 }))
+              : null,
+            liveKind === 'wait' ? h('span', { className: 'dsn-wait-dot', 'aria-hidden': 'true' }) : null,
+            item.title,
+          ),
           subtitle === undefined || subtitle === '' ? null : h('span', { className: 'dsn-item-sub' }, subtitle),
         ),
         h(
@@ -577,7 +774,7 @@ window.__ModuleLoader__.load({
               onToggle(item.id);
             },
           },
-          pinned ? '★' : '☆',
+          h(TaskIcon, { filled: pinned, size: 16 }),
         ),
       );
     }
@@ -612,17 +809,18 @@ window.__ModuleLoader__.load({
       const state = snapshot === undefined || snapshot === null ? {} : snapshot;
       const total = state.total ?? 0;
       const todos = state.todos ?? [];
-      if (total === 0 && todos.length === 0) return null;
+      const running = state.running ?? [];
 
       const groups = state.groups ?? [];
       const todoCount = todos.length;
+      const runningCount = running.length;
+      const idle = total === 0 && todoCount === 0 && runningCount === 0;
       const pendingOnly = total === 0;
-      const label =
-        total > 0 && todoCount > 0
-          ? t('badge.both', { done: total, todo: todoCount })
-          : pendingOnly
-            ? t('badge.todo', { n: todoCount })
-            : t('badge.count', { n: total });
+      const labelParts = [];
+      if (total > 0) labelParts.push(t('badge.count', { n: total }));
+      if (runningCount > 0) labelParts.push(t('badge.running', { n: runningCount }));
+      if (todoCount > 0) labelParts.push(t('badge.todo', { n: todoCount }));
+      const label = labelParts.length > 0 ? labelParts.join('，') : t('badge.idle');
       const todoIds = new Set(todos.map((item) => item.id));
 
       /** Close the popover, open the Session, then reveal its sidebar row. */
@@ -642,7 +840,7 @@ window.__ModuleLoader__.load({
           {
             key: 'toggle',
             type: 'button',
-            className: todoCount > 0 ? 'dsn-button dsn-button-todo' : 'dsn-button',
+            className: idle ? 'dsn-button dsn-button-idle' : 'dsn-button',
             'aria-label': label,
             'aria-haspopup': 'dialog',
             'aria-expanded': open ? 'true' : 'false',
@@ -650,19 +848,37 @@ window.__ModuleLoader__.load({
             onClick: () => setOpen((value) => !value),
           },
           h(BellIcon, { key: 'icon' }),
+          wide && idle ? h('span', { key: 'label', className: 'dsn-label' }, t('tabs.todo')) : null,
           wide && total > 0
-            ? h('span', { key: 'count', className: 'dsn-count' }, String(total))
+            ? h('span', { key: 'count', className: 'dsn-unread' }, String(total))
             : null,
           wide && todoCount > 0
             ? h(
                 'span',
                 { key: 'todos', className: 'dsn-todos', title: t('badge.todo', { n: todoCount }) },
-                h(PinIcon, { key: 'pin' }),
+                h('span', { key: 'star', className: 'dsn-todos-icon' }, h(TaskIcon, { filled: true, size: 16 })),
                 String(todoCount),
+              )
+            : null,
+          wide && runningCount > 0
+            ? h(
+                'span',
+                {
+                  key: 'run',
+                  className: running.some((item) => item.waiting === true) ? 'dsn-run dsn-run-wait' : 'dsn-run',
+                  title: running.some((item) => item.waiting === true)
+                    ? t('badge.waiting', { n: runningCount })
+                    : t('badge.running', { n: runningCount }),
+                },
+                h(RunningDot, { key: 'run-dot', size: 14 }),
+                String(runningCount),
               )
             : null,
           !wide && total > 0
             ? h('span', { key: 'dot', className: 'dsn-dot', 'aria-hidden': 'true' })
+            : null,
+          !wide && runningCount > 0
+            ? h('span', { key: 'dot-run', className: 'dsn-dot-run', 'aria-hidden': 'true' })
             : null,
           !wide && todoCount > 0
             ? h('span', { key: 'dot-pin', className: 'dsn-dot-pin', 'aria-hidden': 'true' })
@@ -672,9 +888,55 @@ window.__ModuleLoader__.load({
 
       if (open) {
         const rows = [
-          h('div', { key: 'head', className: 'dsn-head' }, t('summary', { todo: todos.length, done: total })),
-          h('div', { key: 'tabs.todo', className: 'dsn-section' }, t('tabs.todo')),
+          h(
+            'div',
+            { key: 'head', className: 'dsn-head' },
+            t('summary', { todo: todos.length, done: total, run: running.length }),
+          ),
         ];
+
+        // Unread completions are the urgent half, so they come first in a tinted
+        // block; the todo list below stays plain because it is not time-critical.
+        if (total > 0) {
+          const doneRows = [h('div', { key: 'tabs.done', className: 'dsn-section dsn-section-done' }, t('tabs.done'))];
+          for (const group of groups) {
+            doneRows.push(h('div', { key: 'group:' + group.key, className: 'dsn-group' }, group.title));
+            for (const item of group.items) {
+              doneRows.push(
+                h(NotifyRow, {
+                  key: 'done:' + item.id,
+                  item,
+                  pinned: todoIds.has(item.id),
+                  t,
+                  onOpen: openAt,
+                  onToggle: toggleAt,
+                }),
+              );
+            }
+          }
+          rows.push(h('div', { key: 'done-block', className: 'dsn-done-block' }, doneRows));
+        }
+
+        // Running sessions come next: still alive, each row carries a breathing dot.
+        if (running.length > 0) {
+          rows.push(h('div', { key: 'tabs.running', className: 'dsn-section' }, t('tabs.running')));
+          for (const item of running) {
+            rows.push(
+              h(NotifyRow, {
+                key: 'run:' + item.id,
+                item,
+                subtitle: item.project,
+                pinned: todoIds.has(item.id),
+                liveKind: item.waiting === true ? 'wait' : 'spin',
+                t,
+                onOpen: openAt,
+                onToggle: toggleAt,
+              }),
+            );
+          }
+        }
+
+        rows.push(h('div', { key: 'tabs.todo', className: 'dsn-section' }, t('tabs.todo')));
         if (todos.length === 0) {
           rows.push(h('div', { key: 'todo.empty', className: 'dsn-empty' }, t('todo.empty')));
         }
@@ -690,24 +952,6 @@ window.__ModuleLoader__.load({
               onToggle: toggleAt,
             }),
           );
-        }
-        if (total > 0) {
-          rows.push(h('div', { key: 'tabs.done', className: 'dsn-section' }, t('tabs.done')));
-          for (const group of groups) {
-            rows.push(h('div', { key: 'group:' + group.key, className: 'dsn-group' }, group.title));
-            for (const item of group.items) {
-              rows.push(
-                h(NotifyRow, {
-                  key: 'done:' + item.id,
-                  item,
-                  pinned: todoIds.has(item.id),
-                  t,
-                  onOpen: openAt,
-                  onToggle: toggleAt,
-                }),
-              );
-            }
-          }
         }
 
         children.push(
@@ -728,13 +972,15 @@ window.__ModuleLoader__.load({
     }
 
     return {
-      inject: ['slots', 'locale', 'sessions', 'workspaces', 'remote'],
+      inject: ['slots', 'locale', 'sessions', 'workspaces', 'remote', 'uiSession'],
       apply(ctx) {
         ctx.effect(() => installStyles(), '@local/dsh-session-notify: styles');
         ctx.effect(() => ctx.locale.register(NS, { zh, en }), '@local/dsh-session-notify: dictionaries');
 
         const sessions = ctx.get('sessions');
-        const tracker = createTracker(ctx);
+        const statusRef = { current: undefined };
+        const tracker = createTracker(ctx, statusRef);
+        const uiSession = ctx.get('uiSession');
 
         ctx.effect(() => {
           const stops = [];
@@ -742,6 +988,16 @@ window.__ModuleLoader__.load({
           if (sessions !== undefined) stops.push(sessions.list.subscribe(tracker.reconcile));
           const workspaces = ctx.get('workspaces');
           if (workspaces !== undefined) stops.push(workspaces.list.subscribe(tracker.reconcile));
+          if (uiSession !== undefined && uiSession.sessionStatus !== undefined) {
+            // Live running / pending-interaction facts: the same source the
+            // sidebar's own status dots consume. The subscribe callback is an
+            // invalidation notice — re-read the snapshot inside it.
+            stops.push(uiSession.sessionStatus.subscribe(() => {
+              statusRef.current = uiSession.sessionStatus.getSnapshot();
+              tracker.reconcile();
+            }));
+            statusRef.current = uiSession.sessionStatus.getSnapshot();
+          }
           if (remote !== undefined && typeof remote.$on === 'function') {
             stops.push(remote.$on('api-session/status', tracker.onStatus));
           }
@@ -769,6 +1025,22 @@ window.__ModuleLoader__.load({
               }),
             },
             NotifyBadge,
+          ),
+        );
+
+        ctx.slots.inject('sidebar.workspaces.session.menu.item', () =>
+          ctx.slots.register(
+            {
+              name: 'sidebar.workspaces.session.menu.item',
+              id: 'session-notify-todo',
+              order: 150,
+              locale: NS,
+              inject: () => ({
+                hooks: { sessionNotify: tracker.store },
+                toggleTodo: tracker.toggleTodo,
+              }),
+            },
+            TodoMenuItem,
           ),
         );
       },
